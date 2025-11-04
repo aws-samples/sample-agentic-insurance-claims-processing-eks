@@ -1,0 +1,462 @@
+# NetworkPolicies for Agentic AI System - Secure Agent Communication
+# Only allows necessary communication paths between specific agents
+
+---
+# Insurance Claims Processing Network Policies
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: insurance-coordinator-policy
+  namespace: insurance-claims
+spec:
+  podSelector:
+    matchLabels:
+      app: coordinator
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress from ALB/external traffic
+  - from:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 8000
+  # Allow ingress from claims simulator
+  - from:
+    - podSelector:
+        matchLabels:
+          app: claims-simulator
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  # Allow egress to all agents (coordinator orchestrates)
+  - to:
+    - podSelector:
+        matchLabels:
+          app: fraud-agent
+    ports:
+    - protocol: TCP
+      port: 8001
+  - to:
+    - podSelector:
+        matchLabels:
+          app: policy-agent
+    ports:
+    - protocol: TCP
+      port: 8002
+  - to:
+    - podSelector:
+        matchLabels:
+          app: investigation-agent
+    ports:
+    - protocol: TCP
+      port: 8003
+  - to:
+    - podSelector:
+        matchLabels:
+          app: shared-memory
+    ports:
+    - protocol: TCP
+      port: 8080
+  # Allow egress to Ollama/LLM services
+  - to:
+    - podSelector:
+        matchLabels:
+          app: ollama
+    ports:
+    - protocol: TCP
+      port: 11434
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: insurance-fraud-agent-policy
+  namespace: insurance-claims
+spec:
+  podSelector:
+    matchLabels:
+      app: fraud-agent
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Only allow coordinator to contact fraud agent
+  - from:
+    - podSelector:
+        matchLabels:
+          app: coordinator
+    ports:
+    - protocol: TCP
+      port: 8001
+  egress:
+  # Only allow communication with shared memory and LLM
+  - to:
+    - podSelector:
+        matchLabels:
+          app: shared-memory
+    ports:
+    - protocol: TCP
+      port: 8080
+  - to:
+    - podSelector:
+        matchLabels:
+          app: ollama
+    ports:
+    - protocol: TCP
+      port: 11434
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: insurance-policy-agent-policy
+  namespace: insurance-claims
+spec:
+  podSelector:
+    matchLabels:
+      app: policy-agent
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Only allow coordinator to contact policy agent
+  - from:
+    - podSelector:
+        matchLabels:
+          app: coordinator
+    ports:
+    - protocol: TCP
+      port: 8002
+  egress:
+  # Only allow communication with shared memory and LLM
+  - to:
+    - podSelector:
+        matchLabels:
+          app: shared-memory
+    ports:
+    - protocol: TCP
+      port: 8080
+  - to:
+    - podSelector:
+        matchLabels:
+          app: ollama
+    ports:
+    - protocol: TCP
+      port: 11434
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: insurance-investigation-agent-policy
+  namespace: insurance-claims
+spec:
+  podSelector:
+    matchLabels:
+      app: investigation-agent
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Only allow coordinator to contact investigation agent
+  - from:
+    - podSelector:
+        matchLabels:
+          app: coordinator
+    ports:
+    - protocol: TCP
+      port: 8003
+  egress:
+  # Only allow communication with shared memory and LLM
+  - to:
+    - podSelector:
+        matchLabels:
+          app: shared-memory
+    ports:
+    - protocol: TCP
+      port: 8080
+  - to:
+    - podSelector:
+        matchLabels:
+          app: ollama
+    ports:
+    - protocol: TCP
+      port: 11434
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: insurance-shared-memory-policy
+  namespace: insurance-claims
+spec:
+  podSelector:
+    matchLabels:
+      app: shared-memory
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow all agents to access shared memory
+  - from:
+    - podSelector:
+        matchLabels:
+          app: coordinator
+  - from:
+    - podSelector:
+        matchLabels:
+          app: fraud-agent
+  - from:
+    - podSelector:
+        matchLabels:
+          app: policy-agent
+  - from:
+    - podSelector:
+        matchLabels:
+          app: investigation-agent
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  # Shared memory only needs Redis access
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+
+---
+# AML Financial Processing Network Policies
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: aml-coordinator-policy
+  namespace: financial-aml
+spec:
+  podSelector:
+    matchLabels:
+      app: aml-coordinator
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress from ALB/external traffic
+  - from:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 8000
+  # Allow ingress from transaction simulator
+  - from:
+    - podSelector:
+        matchLabels:
+          app: transaction-simulator
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  # Allow egress to all AML agents
+  - to:
+    - podSelector:
+        matchLabels:
+          app: aml-transaction-monitor
+    ports:
+    - protocol: TCP
+      port: 8001
+  - to:
+    - podSelector:
+        matchLabels:
+          app: aml-risk-pattern
+    ports:
+    - protocol: TCP
+      port: 8002
+  - to:
+    - podSelector:
+        matchLabels:
+          app: ollama
+    ports:
+    - protocol: TCP
+      port: 11434
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: aml-transaction-monitor-policy
+  namespace: financial-aml
+spec:
+  podSelector:
+    matchLabels:
+      app: aml-transaction-monitor
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Only allow AML coordinator to contact transaction monitor
+  - from:
+    - podSelector:
+        matchLabels:
+          app: aml-coordinator
+    ports:
+    - protocol: TCP
+      port: 8001
+  egress:
+  # Only allow communication with LLM
+  - to:
+    - podSelector:
+        matchLabels:
+          app: ollama
+    ports:
+    - protocol: TCP
+      port: 11434
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: aml-risk-pattern-policy
+  namespace: financial-aml
+spec:
+  podSelector:
+    matchLabels:
+      app: aml-risk-pattern
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Only allow AML coordinator to contact risk pattern agent
+  - from:
+    - podSelector:
+        matchLabels:
+          app: aml-coordinator
+    ports:
+    - protocol: TCP
+      port: 8002
+  egress:
+  # Only allow communication with LLM
+  - to:
+    - podSelector:
+        matchLabels:
+          app: ollama
+    ports:
+    - protocol: TCP
+      port: 11434
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+
+---
+# Shared Infrastructure Network Policies
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ollama-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: ollama
+  policyTypes:
+  - Ingress
+  ingress:
+  # Allow all agents to access Ollama LLM service
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: insurance-claims
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: financial-aml
+    ports:
+    - protocol: TCP
+      port: 11434
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-policy
+  namespace: insurance-claims
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes:
+  - Ingress
+  ingress:
+  # Only allow shared memory to access Redis
+  - from:
+    - podSelector:
+        matchLabels:
+          app: shared-memory
+    ports:
+    - protocol: TCP
+      port: 6379
+
+---
+# Default deny-all policy for additional security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all-insurance
+  namespace: insurance-claims
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all-aml
+  namespace: financial-aml
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress

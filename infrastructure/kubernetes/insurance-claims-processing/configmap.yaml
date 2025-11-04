@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autonomous-agents-config
+  namespace: autonomous-agents
+data:
+  # Ollama LLM Configuration
+  MODEL_NAME: "qwen2.5-coder:32b"
+  EMBEDDING_MODEL_NAME: "BAAI/bge-large-en-v1.5"
+  OLLAMA_BASE_URL: "http://ollama-service:11434"
+  
+  # Autonomous Agent Configuration
+  AUTONOMY_LEVEL: "FULL"
+  LEARNING_ENABLED: "true"
+  GOAL_ORIENTED: "true"
+  SELF_REFLECTION: "true"
+  COLLABORATION_MODE: "autonomous"
+  ADAPTATION_ENABLED: "true"
+  PATTERN_LEARNING: "true"
+  
+  # Memory & State Configuration
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  MEMORY_PERSISTENCE: "true"
+  EXPERIENCE_RETENTION: "1000"
+  
+  # Performance Tuning
+  MAX_CONCURRENT_CLAIMS: "100"
+  DECISION_TIMEOUT: "30s"
+  LEARNING_RATE: "0.1"
+  EXPLORATION_RATE: "0.2"
+  CONFIDENCE_THRESHOLD: "0.7"
+  
+  # Demo Configuration
+  DEMO_MODE: "true"
+  SYNTHETIC_DATA_ENABLED: "true"
+  VISUALIZATION_ENABLED: "true"
+  METRICS_COLLECTION: "detailed"

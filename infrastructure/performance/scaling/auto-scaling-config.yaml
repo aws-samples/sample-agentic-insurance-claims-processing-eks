@@ -1,0 +1,421 @@
+# Production Auto-Scaling Configuration
+# Comprehensive scaling setup for insurance claims processing
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: insurance-claims
+  labels:
+    environment: production
+    compliance: industry-standard
+
+---
+# Horizontal Pod Autoscaler for Claims Coordinator
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: claims-coordinator-hpa
+  namespace: insurance-claims
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: human-supervised-coordinator
+  minReplicas: 5    # Higher minimum for production
+  maxReplicas: 50   # Scale up significantly under load
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60  # Conservative CPU threshold
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70  # Memory threshold
+  - type: Pods
+    pods:
+      metric:
+        name: claims_processing_rate
+      target:
+        type: AverageValue
+        averageValue: "10"  # Claims per second per pod
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 60
+      - type: Pods
+        value: 5
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Wait 5 minutes before scaling down
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+
+---
+# HPA for Fraud Analysis Agent (Critical for SIU escalation)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: fraud-agent-hpa
+  namespace: insurance-claims
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: fraud-analysis-agent
+  minReplicas: 10   # High minimum due to SIU requirements
+  maxReplicas: 100  # Fraud analysis is compute-intensive
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 65
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 75
+  - type: Pods
+    pods:
+      metric:
+        name: fraud_analysis_queue_length
+      target:
+        type: AverageValue
+        averageValue: "5"  # Max 5 claims in queue per pod
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30  # Fast scale-up for fraud analysis
+      policies:
+      - type: Percent
+        value: 200  # Double pods quickly
+        periodSeconds: 30
+    scaleDown:
+      stabilizationWindowSeconds: 600  # Slow scale-down (10 minutes)
+      policies:
+      - type: Percent
+        value: 5
+        periodSeconds: 60
+
+---
+# HPA for Policy Analysis Agent (Underwriter workload)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: policy-agent-hpa
+  namespace: insurance-claims
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: policy-analysis-agent
+  minReplicas: 8
+  maxReplicas: 40
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Pods
+    pods:
+      metric:
+        name: underwriter_queue_length
+      target:
+        type: AverageValue
+        averageValue: "3"  # Max 3 policies per pod for quality review
+
+---
+# HPA for Human Workflow Manager (Critical component)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: workflow-manager-hpa
+  namespace: insurance-claims
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: human-workflow-manager
+  minReplicas: 3
+  maxReplicas: 15
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+  - type: Pods
+    pods:
+      metric:
+        name: pending_human_tasks
+      target:
+        type: AverageValue
+        averageValue: "20"  # Max 20 pending tasks per pod
+
+---
+# Vertical Pod Autoscaler for Claims Coordinator (Resource optimization)
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: claims-coordinator-vpa
+  namespace: insurance-claims
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: human-supervised-coordinator
+  updatePolicy:
+    updateMode: "Auto"  # Automatically apply recommendations
+  resourcePolicy:
+    containerPolicies:
+    - containerName: coordinator
+      maxAllowed:
+        cpu: 4000m
+        memory: 8Gi
+      minAllowed:
+        cpu: 100m
+        memory: 256Mi
+      controlledResources: ["cpu", "memory"]
+
+---
+# Custom Metrics for Business Logic Scaling
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scaling-metrics-config
+  namespace: insurance-claims
+data:
+  # Prometheus queries for custom metrics
+  metrics.yaml: |
+    metrics:
+      - name: claims_processing_rate
+        query: rate(claims_processed_total[1m])
+        description: "Claims processed per second"
+
+      - name: fraud_analysis_queue_length
+        query: fraud_analysis_queue_size
+        description: "Number of claims waiting for fraud analysis"
+
+      - name: underwriter_queue_length
+        query: underwriter_task_queue_size
+        description: "Number of policies waiting for underwriter review"
+
+      - name: pending_human_tasks
+        query: human_workflow_pending_tasks_total
+        description: "Total pending tasks requiring human action"
+
+      - name: siu_escalation_rate
+        query: rate(siu_escalations_total[5m])
+        description: "Rate of SIU escalations"
+
+      - name: regulatory_deadline_violations
+        query: regulatory_deadline_violations_total
+        description: "Number of regulatory deadline violations"
+
+---
+# Pod Disruption Budget for High Availability
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: claims-coordinator-pdb
+  namespace: insurance-claims
+spec:
+  minAvailable: 3  # Always keep at least 3 pods running
+  selector:
+    matchLabels:
+      app: human-supervised-coordinator
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: fraud-agent-pdb
+  namespace: insurance-claims
+spec:
+  minAvailable: 5  # Critical for SIU functionality
+  selector:
+    matchLabels:
+      app: fraud-analysis-agent
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: workflow-manager-pdb
+  namespace: insurance-claims
+spec:
+  minAvailable: 2  # Essential for human workflow routing
+  selector:
+    matchLabels:
+      app: human-workflow-manager
+
+---
+# Cluster Autoscaler Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-autoscaler-status
+  namespace: kube-system
+data:
+  nodes.max: "100"  # Maximum nodes in cluster
+  nodes.min: "10"   # Minimum nodes for baseline capacity
+  scale-down-delay-after-add: "10m"
+  scale-down-unneeded-time: "10m"
+  scale-down-utilization-threshold: "0.5"
+
+---
+# KEDA ScaledObject for Event-Driven Scaling
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: claims-processing-scaler
+  namespace: insurance-claims
+spec:
+  scaleTargetRef:
+    name: human-supervised-coordinator
+  minReplicaCount: 5
+  maxReplicaCount: 100
+  pollingInterval: 30
+  cooldownPeriod: 300
+  triggers:
+  - type: prometheus
+    metadata:
+      serverAddress: http://prometheus:9090
+      metricName: claims_processing_queue_length
+      threshold: '10'
+      query: sum(claims_processing_queue_length)
+  - type: prometheus
+    metadata:
+      serverAddress: http://prometheus:9090
+      metricName: regulatory_urgency_score
+      threshold: '0.8'
+      query: avg(regulatory_deadline_urgency_score)
+
+---
+# Priority Classes for Critical Workloads
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority-claims
+value: 1000
+globalDefault: false
+description: "High priority for critical claims processing components"
+
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: regulatory-compliance
+value: 2000
+globalDefault: false
+description: "Highest priority for regulatory compliance workloads"
+
+---
+# Resource Quotas for Production Environment
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: insurance-claims-quota
+  namespace: insurance-claims
+spec:
+  hard:
+    requests.cpu: "50"      # 50 CPU cores total
+    requests.memory: 200Gi  # 200GB memory total
+    limits.cpu: "100"       # 100 CPU cores limit
+    limits.memory: 400Gi    # 400GB memory limit
+    pods: "200"             # Maximum 200 pods
+    services: "20"          # Maximum 20 services
+    persistentvolumeclaims: "10"
+
+---
+# Limit Ranges for Resource Management
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: insurance-claims-limits
+  namespace: insurance-claims
+spec:
+  limits:
+  - type: Pod
+    max:
+      cpu: "8"
+      memory: 16Gi
+    min:
+      cpu: 50m
+      memory: 64Mi
+  - type: Container
+    default:
+      cpu: 500m
+      memory: 1Gi
+    defaultRequest:
+      cpu: 100m
+      memory: 256Mi
+    max:
+      cpu: "4"
+      memory: 8Gi
+    min:
+      cpu: 50m
+      memory: 64Mi
+
+---
+# Network Policies for Security and Performance
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: insurance-claims-network-policy
+  namespace: insurance-claims
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: insurance-claims
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 8000
+    - protocol: TCP
+      port: 8001
+    - protocol: TCP
+      port: 8002
+    - protocol: TCP
+      port: 8005
+  egress:
+  - {} # Allow all egress
+
+---
+# Service Monitor for Prometheus Metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: claims-processing-metrics
+  namespace: insurance-claims
+spec:
+  selector:
+    matchLabels:
+      monitoring: enabled
+  endpoints:
+  - port: metrics
+    interval: 15s
+    path: /metrics
+    scrapeTimeout: 10s

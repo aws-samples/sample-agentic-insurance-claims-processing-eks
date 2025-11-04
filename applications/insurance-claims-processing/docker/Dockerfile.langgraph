@@ -1,0 +1,38 @@
+FROM --platform=linux/amd64 python:3.11-slim
+
+WORKDIR /app
+
+# Build arguments
+ARG PORT=8000
+ARG CMD="src.langgraph_agentic_coordinator:app"
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements-langgraph.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements-langgraph.txt
+
+# Copy source code
+COPY src/ ./src/
+
+# Set Python path
+ENV PYTHONPATH=/app
+
+# Set port from build arg
+ENV PORT=${PORT}
+EXPOSE ${PORT}
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:${PORT}/health || exit 1
+
+# Use build arg for command
+CMD python -m uvicorn ${CMD} --host 0.0.0.0 --port ${PORT}

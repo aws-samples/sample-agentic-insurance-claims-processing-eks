@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coordinator
+  namespace: insurance-claims
+  labels:
+    app: coordinator
+    tier: coordinator
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: coordinator
+  template:
+    metadata:
+      labels:
+        app: coordinator
+    spec:
+      nodeSelector:
+        karpenter.sh/nodepool: cpu-nodepool
+      containers:
+      - name: coordinator
+        image: 123255318457.dkr.ecr.us-west-2.amazonaws.com/insurance-claims/coordinator:latest
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+        ports:
+        - containerPort: 8000
+        env:
+        - name: MONGODB_URL
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret-external
+              key: MONGODB_URL
+        - name: SHARED_MEMORY_URL
+          value: "http://shared-memory-service.insurance-claims.svc.cluster.local:8001"
+        - name: OLLAMA_ENDPOINT
+          value: "http://ollama-service.insurance-claims.svc.cluster.local:11434"
+        - name: MODEL_NAME
+          value: "qwen2.5-coder:7b"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "150m"
+          limits:
+            memory: "512Mi"
+            cpu: "300m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coordinator-service
+  namespace: insurance-claims
+spec:
+  selector:
+    app: coordinator
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP

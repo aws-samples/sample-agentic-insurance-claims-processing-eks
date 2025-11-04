@@ -1,0 +1,90 @@
+# Copy this file to terraform.tfvars and customize the values for your environment
+
+###############################################################
+# General Configuration
+###############################################################
+
+region       = "us-west-2"
+environment  = "test"
+project_name = "agentic"
+
+###############################################################
+# VPC Configuration
+###############################################################
+
+vpc_cidr = "10.0.0.0/16"
+
+# Private subnets (3 subnets across 3 AZs)
+private_subnet_cidrs = [
+  "10.0.1.0/24",
+  "10.0.2.0/24", 
+  "10.0.3.0/24"
+]
+
+# Public subnets (3 subnets across 3 AZs)
+public_subnet_cidrs = [
+  "10.0.101.0/24",
+  "10.0.102.0/24",
+  "10.0.103.0/24"
+]
+
+# NAT Gateway configuration
+enable_nat_gateway = true
+single_nat_gateway = false  # Set to true to use single NAT gateway for cost savings
+
+###############################################################
+# EKS Cluster Configuration
+###############################################################
+
+cluster_name    = ""  # Or leave empty to auto-generate from project_name-environment
+cluster_version = "1.33"
+
+# API endpoint access
+cluster_endpoint_public_access       = true
+cluster_endpoint_private_access      = true
+cluster_endpoint_public_access_cidrs = ["0.0.0.0/0"]  # Restrict this in production
+
+# Note: Node groups are not configured - using Karpenter for autoscaling
+# Karpenter will automatically provision nodes based on pod requirements
+
+###############################################################
+# Addon Configuration
+###############################################################
+
+cluster_addons = {
+  coredns = {
+    most_recent = true
+  }
+  kube-proxy = {
+    most_recent = true
+  }
+  vpc-cni = {
+    most_recent = true
+  }
+  aws-ebs-csi-driver = {
+    most_recent = true
+  }
+}
+
+# Core addons
+enable_nvidia_device_plugin = true
+enable_cluster_autoscaler    = false
+enable_cloudwatch_metrics    = true
+enable_s3_bucket            = true
+
+# Advanced addons (enable as needed)
+enable_karpenter            = true   # Advanced autoscaling (replaces cluster autoscaler)
+enable_fluentbit_logging    = true  # Centralized logging to CloudWatch and S3
+enable_prometheus_grafana   = false  # Monitoring stack (requires more resources)
+
+###############################################################
+# Tags
+###############################################################
+
+tags = {
+  Terraform   = "true"
+  Environment = "test"
+  Project     = "agentic"
+  Owner       = "ssa"
+  CostCenter  = "wwso"
+}

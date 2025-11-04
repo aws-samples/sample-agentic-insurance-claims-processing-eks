@@ -1,0 +1,153 @@
+[
+  {
+    "claim_id": "CLM-2024-001",
+    "policy_number": "POL-AUTO-12345",
+    "claimant_name": "John Smith",
+    "claim_amount": 15000.00,
+    "claim_type": "collision",
+    "incident_date": "2024-01-15",
+    "reported_date": "2024-01-16",
+    "description": "Vehicle collision at intersection of Main St and Oak Ave. Airbags deployed, front-end damage to 2022 Honda Accord.",
+    "policy_details": {
+      "policy_limit": 100000,
+      "deductible": 500,
+      "coverage_types": ["collision", "comprehensive", "liability"],
+      "policy_status": "active",
+      "premium_current": true
+    },
+    "incident_details": {
+      "location": "Main St & Oak Ave, Springfield",
+      "weather_conditions": "clear",
+      "police_report": true,
+      "witnesses": 2,
+      "traffic_violation": false
+    },
+    "claimant_history": {
+      "previous_claims": 1,
+      "claim_frequency": "low",
+      "payment_history": "good",
+      "risk_factors": []
+    }
+  },
+  {
+    "claim_id": "CLM-2024-002", 
+    "policy_number": "POL-HOME-67890",
+    "claimant_name": "Sarah Johnson",
+    "claim_amount": 75000.00,
+    "claim_type": "water_damage",
+    "incident_date": "2024-02-01",
+    "reported_date": "2024-02-01",
+    "description": "Pipe burst in basement causing water damage to finished basement, flooring, and personal property.",
+    "policy_details": {
+      "policy_limit": 250000,
+      "deductible": 1000,
+      "coverage_types": ["dwelling", "personal_property", "liability"],
+      "policy_status": "active",
+      "premium_current": true
+    },
+    "incident_details": {
+      "location": "123 Oak Street, Springfield",
+      "cause": "frozen_pipe_burst",
+      "emergency_services": true,
+      "mitigation_taken": true,
+      "photos_available": true
+    },
+    "claimant_history": {
+      "previous_claims": 0,
+      "claim_frequency": "none",
+      "payment_history": "excellent",
+      "risk_factors": []
+    }
+  },
+  {
+    "claim_id": "CLM-2024-003",
+    "policy_number": "POL-AUTO-24680",
+    "claimant_name": "Mike Wilson",
+    "claim_amount": 85000.00,
+    "claim_type": "collision",
+    "incident_date": "2024-02-10",
+    "reported_date": "2024-02-12",
+    "description": "Single vehicle accident on highway. Vehicle rolled over after swerving to avoid debris.",
+    "policy_details": {
+      "policy_limit": 50000,
+      "deductible": 1000,
+      "coverage_types": ["collision", "comprehensive"],
+      "policy_status": "active",
+      "premium_current": false
+    },
+    "incident_details": {
+      "location": "Highway 95, mile marker 47",
+      "weather_conditions": "rain",
+      "police_report": true,
+      "witnesses": 0,
+      "traffic_violation": false,
+      "suspicious_factors": ["delayed_reporting", "amount_exceeds_limit"]
+    },
+    "claimant_history": {
+      "previous_claims": 3,
+      "claim_frequency": "high",
+      "payment_history": "poor",
+      "risk_factors": ["frequent_claims", "premium_delinquent"]
+    }
+  },
+  {
+    "claim_id": "CLM-2024-004",
+    "policy_number": "POL-HOME-13579",
+    "claimant_name": "Lisa Davis",
+    "claim_amount": 25000.00,
+    "claim_type": "theft",
+    "incident_date": "2024-02-15",
+    "reported_date": "2024-02-15",
+    "description": "Burglary occurred while on vacation. Electronics, jewelry, and cash stolen from master bedroom.",
+    "policy_details": {
+      "policy_limit": 150000,
+      "deductible": 500,
+      "coverage_types": ["dwelling", "personal_property", "liability"],
+      "policy_status": "active",
+      "premium_current": true
+    },
+    "incident_details": {
+      "location": "456 Pine Avenue, Springfield",
+      "forced_entry": true,
+      "police_report": true,
+      "security_system": false,
+      "neighbor_witness": true
+    },
+    "claimant_history": {
+      "previous_claims": 0,
+      "claim_frequency": "none", 
+      "payment_history": "excellent",
+      "risk_factors": []
+    }
+  },
+  {
+    "claim_id": "CLM-2024-005",
+    "policy_number": "POL-AUTO-97531",
+    "claimant_name": "Robert Chen",
+    "claim_amount": 45000.00,
+    "claim_type": "comprehensive",
+    "incident_date": "2024-02-20",
+    "reported_date": "2024-02-21", 
+    "description": "Hail damage to vehicle during severe storm. Multiple dents on hood, roof, and trunk.",
+    "policy_details": {
+      "policy_limit": 75000,
+      "deductible": 250,
+      "coverage_types": ["collision", "comprehensive", "liability"],
+      "policy_status": "active",
+      "premium_current": true
+    },
+    "incident_details": {
+      "location": "789 Elm Street, Springfield",
+      "weather_event": "hail_storm",
+      "weather_service_report": true,
+      "multiple_claims_area": true,
+      "photos_available": true
+    },
+    "claimant_history": {
+      "previous_claims": 1,
+      "claim_frequency": "low",
+      "payment_history": "good",
+      "risk_factors": []
+    }
+  }
+]

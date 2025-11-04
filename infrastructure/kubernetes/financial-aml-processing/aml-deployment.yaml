@@ -1,0 +1,591 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: financial-aml
+  labels:
+    name: financial-aml
+    type: agentic-ai-system
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aml-config
+  namespace: financial-aml
+data:
+  REDIS_URL: "redis://redis-service:6379"
+  OLLAMA_ENDPOINT: "http://ollama-service:11434"
+  SHARED_MEMORY_URL: "http://aml-shared-memory:8080"
+  LOG_LEVEL: "INFO"
+  ENVIRONMENT: "production"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aml-coordinator
+  namespace: financial-aml
+  labels:
+    app: aml-coordinator
+    tier: coordination
+    component: agentic-ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aml-coordinator
+  template:
+    metadata:
+      labels:
+        app: aml-coordinator
+        tier: coordination
+    spec:
+      serviceAccountName: aml-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: aml-coordinator
+        image: 123255318457.dkr.ecr.us-west-2.amazonaws.com/aml-coordinator:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        env:
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: aml-config
+              key: REDIS_URL
+        - name: OLLAMA_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: aml-config
+              key: OLLAMA_ENDPOINT
+        - name: SHARED_MEMORY_URL
+          valueFrom:
+            configMapKeyRef:
+              name: aml-config
+              key: SHARED_MEMORY_URL
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: aml-config
+              key: LOG_LEVEL
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: aml-config
+              key: ENVIRONMENT
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+            ephemeral-storage: "1Gi"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+            ephemeral-storage: "2Gi"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aml-coordinator-service
+  namespace: financial-aml
+spec:
+  selector:
+    app: aml-coordinator
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aml-transaction-monitor
+  namespace: financial-aml
+  labels:
+    app: aml-transaction-monitor
+    tier: agent
+    component: agentic-ai
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: aml-transaction-monitor
+  template:
+    metadata:
+      labels:
+        app: aml-transaction-monitor
+        tier: agent
+    spec:
+      containers:
+      - name: transaction-monitor
+        image: 123255318457.dkr.ecr.us-west-2.amazonaws.com/aml-transaction-monitor:latest
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+        ports:
+        - containerPort: 8001
+          name: http
+        env:
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: aml-config
+              key: REDIS_URL
+        - name: OLLAMA_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: aml-config
+              key: OLLAMA_ENDPOINT
+        - name: SHARED_MEMORY_URL
+          valueFrom:
+            configMapKeyRef:
+              name: aml-config
+              key: SHARED_MEMORY_URL
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "150m"
+          limits:
+            memory: "512Mi"
+            cpu: "300m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aml-transaction-monitor
+  namespace: financial-aml
+spec:
+  selector:
+    app: aml-transaction-monitor
+  ports:
+  - protocol: TCP
+    port: 8001
+    targetPort: 8001
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aml-risk-pattern
+  namespace: financial-aml
+  labels:
+    app: aml-risk-pattern
+    tier: agent
+    component: agentic-ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aml-risk-pattern
+  template:
+    metadata:
+      labels:
+        app: aml-risk-pattern
+        tier: agent
+    spec:
+      containers:
+      - name: risk-pattern
+        image: 123255318457.dkr.ecr.us-west-2.amazonaws.com/aml-risk-pattern:latest
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+        ports:
+        - containerPort: 8002
+          name: http
+        env:
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: aml-config
+              key: REDIS_URL
+        - name: OLLAMA_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: aml-config
+              key: OLLAMA_ENDPOINT
+        - name: SHARED_MEMORY_URL
+          valueFrom:
+            configMapKeyRef:
+              name: aml-config
+              key: SHARED_MEMORY_URL
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "300m"
+          limits:
+            memory: "1Gi"
+            cpu: "600m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 45
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 10
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aml-risk-pattern
+  namespace: financial-aml
+spec:
+  selector:
+    app: aml-risk-pattern
+  ports:
+  - protocol: TCP
+    port: 8002
+    targetPort: 8002
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transaction-stream-simulator
+  namespace: financial-aml
+  labels:
+    app: transaction-simulator
+    tier: simulation
+    component: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: transaction-simulator
+  template:
+    metadata:
+      labels:
+        app: transaction-simulator
+        tier: simulation
+    spec:
+      containers:
+      - name: transaction-simulator
+        image: 123255318457.dkr.ecr.us-west-2.amazonaws.com/transaction-simulator:latest
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+        ports:
+        - containerPort: 8090
+          name: http
+        env:
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: aml-config
+              key: REDIS_URL
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8090
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8090
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: transaction-simulator-service
+  namespace: financial-aml
+spec:
+  selector:
+    app: transaction-simulator
+  ports:
+  - protocol: TCP
+    port: 8090
+    targetPort: 8090
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: financial-aml
+  labels:
+    app: redis
+    tier: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        tier: database
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+        ports:
+        - containerPort: 6379
+          name: redis
+        command:
+        - redis-server
+        - --appendonly
+        - "yes"
+        - --maxmemory
+        - "512mb"
+        - --maxmemory-policy
+        - "allkeys-lru"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+      volumes:
+      - name: redis-data
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: financial-aml
+spec:
+  selector:
+    app: redis
+  ports:
+  - protocol: TCP
+    port: 6379
+    targetPort: 6379
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aml-ingress
+  namespace: financial-aml
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/websocket-services: "aml-coordinator-service"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  rules:
+  - host: aml.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: aml-coordinator-service
+            port:
+              number: 8000
+      - path: /simulator
+        pathType: Prefix
+        backend:
+          service:
+            name: transaction-simulator-service
+            port:
+              number: 8090
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aml-service-account
+  namespace: financial-aml
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: aml-cluster-role
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: aml-cluster-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: aml-cluster-role
+subjects:
+- kind: ServiceAccount
+  name: aml-service-account
+  namespace: financial-aml
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: aml-coordinator-pdb
+  namespace: financial-aml
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: aml-coordinator
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: aml-transaction-monitor-pdb
+  namespace: financial-aml
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: aml-transaction-monitor
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: aml-coordinator-hpa
+  namespace: financial-aml
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: aml-coordinator
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: aml-transaction-monitor-hpa
+  namespace: financial-aml
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: aml-transaction-monitor
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70

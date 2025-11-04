@@ -1,0 +1,41 @@
+# Additional requirements for analytics and ML models
+# Extends requirements-production.txt
+
+# Machine Learning & Data Science
+scikit-learn==1.3.0
+pandas==2.0.3
+numpy==1.24.3
+scipy==1.11.1
+
+# Deep Learning (optional)
+torch==2.0.1
+torchvision==0.15.2
+
+# Time Series Analysis
+statsmodels==0.14.0
+pmdarima==2.0.3
+
+# Actuarial & Insurance Specific
+lifelines==0.27.7
+
+# Advanced Analytics
+xgboost==1.7.6
+lightgbm==4.0.0
+catboost==1.2
+
+# Visualization
+matplotlib==3.7.2
+seaborn==0.12.2
+plotly==5.15.0
+
+# Data Processing
+h5py==3.9.0
+tables==3.8.0
+openpyxl==3.1.2
+
+# Model Serving
+joblib==1.3.1
+
+# Optimization
+cvxpy==1.3.2
+pulp==2.7.0

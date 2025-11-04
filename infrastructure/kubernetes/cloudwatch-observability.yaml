@@ -1,0 +1,384 @@
+# CloudWatch Observability for Agentic AI System
+# Comprehensive logging, metrics, and tracing integration
+
+---
+# AWS for Fluent Bit DaemonSet for log shipping to CloudWatch
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: amazon-cloudwatch
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush                     5
+        Grace                     30
+        Log_Level                 info
+        Daemon                    off
+        Parsers_File              parsers.conf
+        HTTP_Server               On
+        HTTP_Listen               0.0.0.0
+        HTTP_Port                 2020
+        storage.path              /var/fluent-bit/state/flb-storage/
+        storage.sync              normal
+        storage.checksum          off
+        storage.backlog.mem_limit 5M
+
+    [INPUT]
+        Name                tail
+        Tag                 agentic.*
+        Path                /var/log/containers/coordinator-*.log,/var/log/containers/fraud-agent-*.log,/var/log/containers/policy-agent-*.log,/var/log/containers/investigation-agent-*.log,/var/log/containers/shared-memory-*.log,/var/log/containers/aml-coordinator-*.log,/var/log/containers/aml-transaction-monitor-*.log,/var/log/containers/aml-risk-pattern-*.log
+        Parser              cri
+        DB                  /var/fluent-bit/state/flb_container.db
+        Mem_Buf_Limit       50MB
+        Skip_Long_Lines     On
+        Refresh_Interval    10
+        Rotate_Wait         30
+        storage.type        filesystem
+        Read_from_Head      ${READ_FROM_HEAD}
+
+    [FILTER]
+        Name                kubernetes
+        Match               agentic.*
+        Kube_URL            https://kubernetes.default.svc:443
+        Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+        Kube_Tag_Prefix     agentic.var.log.containers.
+        Merge_Log           On
+        Merge_Log_Key       log_processed
+        K8S-Logging.Parser  On
+        K8S-Logging.Exclude Off
+        Labels              Off
+        Annotations         Off
+
+    [FILTER]
+        Name                 modify
+        Match                agentic.*
+        Add                  agent_type unknown
+        Add                  correlation_id unknown
+        Add                  workflow_step unknown
+
+    [FILTER]
+        Name                 lua
+        Match                agentic.*
+        script               /fluent-bit/scripts/agentic-parser.lua
+        call                 parse_agentic_logs
+
+    [OUTPUT]
+        Name                cloudwatch_logs
+        Match               agentic.*
+        region              ${AWS_REGION}
+        log_group_name      /aws/eks/agentic-ai/agents
+        log_stream_prefix   ${HOSTNAME}-
+        auto_create_group   true
+        extra_user_agent    container-insights
+
+  parsers.conf: |
+    [PARSER]
+        Name                cri
+        Format              regex
+        Regex               ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
+        Time_Key            time
+        Time_Format         %Y-%m-%dT%H:%M:%S.%L%z
+
+  agentic-parser.lua: |
+    function parse_agentic_logs(tag, timestamp, record)
+        local message = record["message"]
+        if message == nil then
+            return 0, 0, 0
+        end
+
+        -- Extract correlation ID
+        local correlation_id = string.match(message, "correlation_id:([%w%-]+)")
+        if correlation_id then
+            record["correlation_id"] = correlation_id
+        end
+
+        -- Extract agent type from container name
+        local container_name = record["kubernetes"]["container_name"]
+        if container_name then
+            record["agent_type"] = container_name
+        end
+
+        -- Extract workflow step
+        local workflow_step = string.match(message, "workflow_step:([%w_]+)")
+        if workflow_step then
+            record["workflow_step"] = workflow_step
+        end
+
+        -- Extract performance metrics
+        local processing_time = string.match(message, "processing_time:(%d+%.?%d*)")
+        if processing_time then
+            record["processing_time_ms"] = tonumber(processing_time)
+        end
+
+        local confidence_score = string.match(message, "confidence:(%d+%.%d+)")
+        if confidence_score then
+            record["confidence_score"] = tonumber(confidence_score)
+        end
+
+        -- Extract decision outcomes
+        local decision = string.match(message, "decision:([%w_]+)")
+        if decision then
+            record["agent_decision"] = decision
+        end
+
+        return 1, timestamp, record
+    end
+
+---
+# ServiceMonitor for Prometheus metrics collection
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: agentic-ai-metrics
+  namespace: insurance-claims
+  labels:
+    app: agentic-ai
+spec:
+  selector:
+    matchLabels:
+      metrics: enabled
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+
+---
+# ServiceMonitor for AML metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: aml-metrics
+  namespace: financial-aml
+  labels:
+    app: aml-ai
+spec:
+  selector:
+    matchLabels:
+      metrics: enabled
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+
+---
+# CloudWatch Container Insights
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloudwatch-agent
+  namespace: amazon-cloudwatch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloudwatch-agent-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "nodes", "endpoints"]
+    verbs: ["list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes/proxy"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["nodes/stats", "configmaps", "events"]
+    verbs: ["create", "get"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["cwagent-clusterleader"]
+    verbs: ["get","update"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloudwatch-agent-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloudwatch-agent-role
+subjects:
+  - kind: ServiceAccount
+    name: cloudwatch-agent
+    namespace: amazon-cloudwatch
+
+---
+# CloudWatch Agent Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cwagentconfig
+  namespace: amazon-cloudwatch
+data:
+  cwagentconfig.json: |
+    {
+      "agent": {
+        "region": "us-west-2"
+      },
+      "logs": {
+        "metrics_collected": {
+          "kubernetes": {
+            "cluster_name": "agentic-eks-cluster",
+            "metrics_collection_interval": 60
+          }
+        },
+        "force_flush_interval": 5
+      },
+      "metrics": {
+        "namespace": "CWAgent",
+        "metrics_collected": {
+          "cpu": {
+            "measurement": [
+              "cpu_usage_idle",
+              "cpu_usage_iowait",
+              "cpu_usage_user",
+              "cpu_usage_system"
+            ],
+            "metrics_collection_interval": 60
+          },
+          "disk": {
+            "measurement": [
+              "used_percent"
+            ],
+            "metrics_collection_interval": 60,
+            "resources": [
+              "*"
+            ]
+          },
+          "diskio": {
+            "measurement": [
+              "io_time",
+              "read_bytes",
+              "write_bytes",
+              "reads",
+              "writes"
+            ],
+            "metrics_collection_interval": 60,
+            "resources": [
+              "*"
+            ]
+          },
+          "mem": {
+            "measurement": [
+              "mem_used_percent"
+            ],
+            "metrics_collection_interval": 60
+          },
+          "netstat": {
+            "measurement": [
+              "tcp_established",
+              "tcp_time_wait"
+            ],
+            "metrics_collection_interval": 60
+          },
+          "swap": {
+            "measurement": [
+              "swap_used_percent"
+            ],
+            "metrics_collection_interval": 60
+          }
+        }
+      }
+    }
+
+---
+# X-Ray DaemonSet for distributed tracing
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: xray-daemon
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: xray-daemon
+  template:
+    metadata:
+      labels:
+        app: xray-daemon
+    spec:
+      serviceAccountName: xray-daemon
+      # Host networking is required for X-Ray daemon to receive UDP traffic from applications
+      # Applications send traces to localhost:2000, requiring daemon to listen on host network
+      # This is AWS's recommended deployment pattern for X-Ray daemon on Kubernetes
+      hostNetwork: true
+      containers:
+      - name: xray-daemon
+        image: amazon/aws-xray-daemon:latest
+        securityContext:
+          # Run as non-root user for security
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+            add:
+              - NET_BIND_SERVICE  # Required to bind to UDP port 2000
+        command:
+          - /usr/bin/xray
+          - -t
+          - 0.0.0.0:2000
+          - -b
+          - 0.0.0.0:2000
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        ports:
+        - name: xray-ingest
+          containerPort: 2000
+          protocol: UDP
+        env:
+        - name: AWS_REGION
+          value: us-west-2
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: xray-daemon
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: xray-daemon
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: xray-daemon
+  namespace: default
+
+---
+# X-Ray Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: xray-service
+  namespace: default
+spec:
+  selector:
+    app: xray-daemon
+  ports:
+  - name: xray-ingest
+    port: 2000
+    protocol: UDP
+    targetPort: 2000
+  type: ClusterIP

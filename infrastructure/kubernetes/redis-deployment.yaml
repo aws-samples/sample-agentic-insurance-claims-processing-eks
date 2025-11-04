@@ -1,0 +1,57 @@
+# Redis Service for Insurance Claims Processing
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-service
+  namespace: insurance-claims
+  labels:
+    app: redis-service
+    tier: cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-service
+  template:
+    metadata:
+      labels:
+        app: redis-service
+    spec:
+      nodeSelector:
+        karpenter.sh/nodepool: cpu-nodepool
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 999
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+      volumes:
+      - name: redis-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: insurance-claims
+spec:
+  selector:
+    app: redis-service
+  ports:
+  - port: 6379
+    targetPort: 6379
+  type: ClusterIP

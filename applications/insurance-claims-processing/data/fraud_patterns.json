@@ -1,0 +1,67 @@
+[
+  {
+    "pattern_id": "FP-001",
+    "pattern_name": "Amount Near Policy Limit",
+    "description": "Claim amount suspiciously close to policy maximum",
+    "indicators": [
+      "claim_amount > policy_limit * 0.9",
+      "round_number_amount",
+      "no_supporting_documentation"
+    ],
+    "risk_score": 0.7,
+    "frequency": "high",
+    "examples": 127
+  },
+  {
+    "pattern_id": "FP-002", 
+    "pattern_name": "Delayed Reporting",
+    "description": "Significant delay between incident and reporting",
+    "indicators": [
+      "reporting_delay > 7_days",
+      "vague_incident_details",
+      "no_police_report"
+    ],
+    "risk_score": 0.6,
+    "frequency": "medium",
+    "examples": 89
+  },
+  {
+    "pattern_id": "FP-003",
+    "pattern_name": "Frequent Claimant",
+    "description": "Claimant with unusually high claim frequency",
+    "indicators": [
+      "claims_in_12_months > 2",
+      "different_policy_types",
+      "increasing_claim_amounts"
+    ],
+    "risk_score": 0.8,
+    "frequency": "low",
+    "examples": 34
+  },
+  {
+    "pattern_id": "FP-004",
+    "pattern_name": "Weather Event Opportunist", 
+    "description": "Claims filed immediately after natural disasters",
+    "indicators": [
+      "reported_within_24hrs_of_weather_event",
+      "no_prior_maintenance_records",
+      "claim_exceeds_typical_damage"
+    ],
+    "risk_score": 0.5,
+    "frequency": "seasonal",
+    "examples": 156
+  },
+  {
+    "pattern_id": "FP-005",
+    "pattern_name": "Documentation Anomalies",
+    "description": "Suspicious or inconsistent documentation",
+    "indicators": [
+      "receipts_from_same_vendor",
+      "photocopied_receipts_only",
+      "inconsistent_damage_descriptions"
+    ],
+    "risk_score": 0.9,
+    "frequency": "medium",
+    "examples": 67
+  }
+]

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claim Review - {{ claim.claim_id }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .top-nav {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .top-nav h1 {
+            font-size: 1.6em;
+            margin-bottom: 5px;
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        .back-link:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 40px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #1e3c72;
+            font-size: 1.4em;
+        }
+
+        .info-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            padding: 15px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .info-value {
+            color: #212529;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-low { background: #28a745; color: white; }
+        .badge-medium { background: #ffc107; color: #000; }
+        .badge-high { background: #dc3545; color: white; }
+        .badge-urgent { background: #dc3545; color: white; }
+        .badge-normal { background: #28a745; color: white; }
+        .badge-submitted { background: #17a2b8; color: white; }
+
+        .ai-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .ai-section h3 {
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .fraud-score {
+            font-size: 3em;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+
+        .score-bar {
+            width: 100%;
+            height: 12px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .score-fill {
+            height: 100%;
+            background: white;
+            transition: width 0.3s;
+        }
+
+        .recommendation {
+            background: white;
+            color: #1e3c72;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #1e3c72;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .amount-large {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #1e3c72;
+        }
+
+        .risk-indicators {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 6px;
+        }
+
+        .risk-indicators ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        .risk-indicators li {
+            margin-bottom: 8px;
+            color: #856404;
+        }
+
+        .decision-form {
+            margin-top: 30px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-nav">
+        <a href="/" class="back-link" style="margin-right: 15px;">← Home</a>
+        <a href="/adjuster" class="back-link">← Back to Dashboard</a>
+        <h1>Claim Review: {{ claim.claim_id }}</h1>
+        <p style="opacity: 0.9;">AI-Assisted Claims Adjudication</p>
+    </div>
+
+    <div class="container">
+        <div class="grid">
+            <div>
+                <!-- Claim Details -->
+                <div class="card">
+                    <h2>Claim Information</h2>
+                    <div class="info-row">
+                        <div class="info-label">Claim ID:</div>
+                        <div class="info-value" style="font-family: 'Courier New', monospace; font-weight: 700;">{{ claim.claim_id }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Policy Number:</div>
+                        <div class="info-value" style="font-family: 'Courier New', monospace;">{{ claim.policy_number }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Claimant:</div>
+                        <div class="info-value"><strong>{{ claim.customer_name }}</strong><br>{{ claim.customer_email }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Claim Type:</div>
+                        <div class="info-value">{{ claim.claim_type.title() }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Claim Amount:</div>
+                        <div class="info-value amount-large">${{ "{:,.2f}".format(claim.claim_amount) }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Status:</div>
+                        <div class="info-value">
+                            <span class="badge badge-{{ claim.status.lower().replace(' ', '-') }}">{{ claim.status }}</span>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Priority:</div>
+                        <div class="info-value">
+                            <span class="badge badge-{{ claim.get('priority', 'normal') }}">{{ claim.get('priority', 'normal').upper() }}</span>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Incident Date:</div>
+                        <div class="info-value">{{ claim.incident_date.strftime('%Y-%m-%d') if claim.incident_date else 'N/A' }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Filed Date:</div>
+                        <div class="info-value">{{ claim.created_at.strftime('%Y-%m-%d %H:%M') if claim.created_at else 'N/A' }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Description:</div>
+                        <div class="info-value">{{ claim.description }}</div>
+                    </div>
+                </div>
+
+                <!-- Decision Form -->
+                <div class="card decision-form">
+                    <h2>Submit Decision</h2>
+                    <form method="POST" action="/adjuster/claim/{{ claim.claim_id }}/decision">
+                        <div class="form-group">
+                            <label for="decision">Decision *</label>
+                            <select name="decision" id="decision" required onchange="toggleSettlementAmount()">
+                                <option value="">-- Select Decision --</option>
+                                <option value="approve">Approve Claim</option>
+                                <option value="deny">Deny Claim</option>
+                                <option value="investigate">Request Investigation</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="settlementGroup" style="display: none;">
+                            <label for="settlement_amount">Settlement Amount (leave empty if denying)</label>
+                            <input type="number" name="settlement_amount" id="settlement_amount" step="0.01" min="0" placeholder="Enter settlement amount">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="reasoning">Reasoning *</label>
+                            <textarea name="reasoning" id="reasoning" required placeholder="Provide detailed reasoning for your decision..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="adjuster_id">Adjuster ID *</label>
+                            <input type="text" name="adjuster_id" id="adjuster_id" value="ADJ-2024-001" required>
+                        </div>
+
+                        <div class="button-group">
+                            <button type="submit" class="btn btn-success" id="submitBtn" style="display: none;">✓ Submit Approval</button>
+                            <button type="submit" class="btn btn-danger" id="denyBtn" style="display: none;">✗ Submit Denial</button>
+                            <button type="submit" class="btn btn-warning" id="investigateBtn" style="display: none;">🔍 Request Investigation</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div>
+                <!-- AI Analysis -->
+                <div class="ai-section">
+                    <h3>🤖 AI Fraud Analysis</h3>
+                    {% set fraud_score = claim.get('fraud_score') or (claim.get('ai_recommendation') or {}).get('fraud_score', 0) %}
+                    <div class="fraud-score">{{ "%.2f"|format(fraud_score) }}</div>
+                    <div class="score-bar">
+                        <div class="score-fill" style="width: {{ (fraud_score * 100)|int }}%"></div>
+                    </div>
+                    <p style="margin-top: 10px; opacity: 0.95;">
+                        {% if fraud_score > 0.7 %}
+                            <strong>HIGH RISK</strong> - Recommend SIU investigation
+                        {% elif fraud_score > 0.4 %}
+                            <strong>MEDIUM RISK</strong> - Enhanced review recommended
+                        {% else %}
+                            <strong>LOW RISK</strong> - Standard processing
+                        {% endif %}
+                    </p>
+                    {% if claim.get('ai_recommendation') %}
+                    <div class="recommendation">
+                        <strong>AI Recommendation:</strong> {{ claim.ai_recommendation.get('recommended_action', 'review').upper() }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Risk Indicators -->
+                {% if fraud_score > 0.4 %}
+                <div class="risk-indicators">
+                    <strong>⚠️ Risk Indicators Detected:</strong>
+                    <ul>
+                        {% if claim.claim_amount > 50000 %}
+                        <li>High claim amount (>${{ "{:,.0f}".format(claim.claim_amount) }})</li>
+                        {% endif %}
+                        {% if fraud_score > 0.7 %}
+                        <li>Suspicious pattern detected by AI</li>
+                        {% endif %}
+                        <li>Requires enhanced verification</li>
+                    </ul>
+                </div>
+                {% endif %}
+
+                <!-- Additional Info -->
+                <div class="card" style="margin-top: 20px;">
+                    <h2>Additional Information</h2>
+                    <div class="info-row">
+                        <div class="info-label">Claimant Phone:</div>
+                        <div class="info-value">{{ claim.get('customer_phone', 'N/A') }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Incident Location:</div>
+                        <div class="info-value">{{ claim.get('incident_location', 'N/A') }}</div>
+                    </div>
+                    {% if claim.get('ai_recommendation', {}).get('external_data_summary') %}
+                    <div class="info-row">
+                        <div class="info-label">External Data:</div>
+                        <div class="info-value">{{ claim.ai_recommendation.external_data_summary }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSettlementAmount() {
+            const decision = document.getElementById('decision').value;
+            const settlementGroup = document.getElementById('settlementGroup');
+            const submitBtn = document.getElementById('submitBtn');
+            const denyBtn = document.getElementById('denyBtn');
+            const investigateBtn = document.getElementById('investigateBtn');
+
+            // Hide all buttons first
+            submitBtn.style.display = 'none';
+            denyBtn.style.display = 'none';
+            investigateBtn.style.display = 'none';
+
+            if (decision === 'approve') {
+                settlementGroup.style.display = 'block';
+                submitBtn.style.display = 'inline-block';
+            } else if (decision === 'deny') {
+                settlementGroup.style.display = 'none';
+                document.getElementById('settlement_amount').value = '';
+                denyBtn.style.display = 'inline-block';
+            } else if (decision === 'investigate') {
+                settlementGroup.style.display = 'none';
+                document.getElementById('settlement_amount').value = '';
+                investigateBtn.style.display = 'inline-block';
+            } else {
+                settlementGroup.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

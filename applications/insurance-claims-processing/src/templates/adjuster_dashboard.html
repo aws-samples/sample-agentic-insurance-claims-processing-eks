@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claims Adjuster Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .top-nav {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .top-nav h1 {
+            font-size: 1.8em;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: white;
+            color: #1e3c72;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2em;
+        }
+
+        .home-link {
+            color: white;
+            text-decoration: none;
+            opacity: 0.9;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+
+        .home-link:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 30px 40px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 35px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #1e3c72;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #1e3c72;
+        }
+
+        .stat-card.urgent {
+            border-left-color: #dc3545;
+        }
+
+        .stat-card.urgent .stat-value {
+            color: #dc3545;
+        }
+
+        .stat-card.positive {
+            border-left-color: #28a745;
+        }
+
+        .stat-card.positive .stat-value {
+            color: #28a745;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 3px solid #1e3c72;
+            padding-bottom: 15px;
+        }
+
+        .section-header h2 {
+            color: #1e3c72;
+            font-size: 1.6em;
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            border-color: #1e3c72;
+            background: #1e3c72;
+            color: white;
+        }
+
+        .claims-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .claims-table thead {
+            background: #f8f9fa;
+        }
+
+        .claims-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .claims-table td {
+            padding: 18px 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .claims-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .claim-id {
+            font-weight: 700;
+            color: #1e3c72;
+            font-family: 'Courier New', monospace;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-urgent { background: #dc3545; color: white; }
+        .badge-high { background: #ffc107; color: #000; }
+        .badge-normal { background: #28a745; color: white; }
+        .badge-submitted { background: #17a2b8; color: white; }
+        .badge-processing { background: #007bff; color: white; }
+        .badge-approved { background: #28a745; color: white; }
+
+        .ai-score {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .score-bar {
+            width: 80px;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .score-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #ffc107, #dc3545);
+            transition: width 0.3s;
+        }
+
+        .score-value {
+            font-weight: 700;
+            font-size: 0.9em;
+        }
+
+        .score-low { color: #28a745; }
+        .score-medium { color: #ffc107; }
+        .score-high { color: #dc3545; }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #1e3c72;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2a5298;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 0.85em;
+        }
+
+        .amount {
+            font-weight: 700;
+            font-size: 1.05em;
+        }
+
+        .amount-high {
+            color: #dc3545;
+        }
+
+        .amount-medium {
+            color: #ffc107;
+        }
+
+        .amount-low {
+            color: #28a745;
+        }
+
+        .claim-row {
+            transition: all 0.3s;
+        }
+
+        .claim-row.needs-attention {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+
+        .ai-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .policy-link {
+            color: #1e3c72;
+            text-decoration: none;
+            font-family: 'Courier New', monospace;
+        }
+
+        .policy-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-nav">
+        <div>
+            <a href="/" class="home-link">← Home</a>
+            <h1>Claims Adjuster Dashboard</h1>
+            <p style="opacity: 0.9; font-size: 0.95em;">AI-Powered Claims Processing System</p>
+        </div>
+        <div class="user-info">
+            <div>
+                <div style="text-align: right; font-weight: 600;">{{ adjuster_name or 'Claims Adjuster' }}</div>
+                <div style="font-size: 0.85em; opacity: 0.9;">License: {{ adjuster_license or 'ADJ-2024-001' }}</div>
+            </div>
+            <div class="user-avatar">{{ adjuster_name[0] if adjuster_name else 'A' }}</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Assigned Claims</h3>
+                <div class="stat-value">{{ stats.get('assigned', 0) }}</div>
+            </div>
+            <div class="stat-card urgent">
+                <h3>Urgent Review</h3>
+                <div class="stat-value">{{ stats.get('urgent', 0) }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Pending Decision</h3>
+                <div class="stat-value">{{ stats.get('pending', 0) }}</div>
+            </div>
+            <div class="stat-card positive">
+                <h3>Completed Today</h3>
+                <div class="stat-value">{{ stats.get('completed_today', 0) }}</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Claims Queue</h2>
+                    <div class="filters">
+                        <button class="filter-btn active" onclick="filterClaims('all')">All</button>
+                        <button class="filter-btn" onclick="filterClaims('urgent')">Urgent</button>
+                        <button class="filter-btn" onclick="filterClaims('high-risk')">High Risk</button>
+                        <button class="filter-btn" onclick="filterClaims('new')">New</button>
+                    </div>
+                </div>
+
+                {% if claims %}
+                <table class="claims-table">
+                    <thead>
+                        <tr>
+                            <th>Claim ID</th>
+                            <th>Policy</th>
+                            <th>Claimant</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>AI Fraud Score</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for claim in claims %}
+                        <tr class="claim-row {% if claim.get('priority') == 'urgent' or (claim.get('fraud_score', 0) > 0.7) %}needs-attention{% endif %}">
+                            <td>
+                                <span class="claim-id">{{ claim.claim_id }}</span><br>
+                                <small style="color: #6c757d;">{{ claim.created_at.strftime('%Y-%m-%d %H:%M') if claim.created_at else 'N/A' }}</small>
+                            </td>
+                            <td>
+                                <a href="/adjuster/policy/{{ claim.policy_number }}" class="policy-link">{{ claim.policy_number }}</a>
+                            </td>
+                            <td>
+                                <strong>{{ claim.customer_name }}</strong><br>
+                                <small style="color: #6c757d;">{{ claim.customer_email }}</small>
+                            </td>
+                            <td>{{ claim.claim_type.title() }}</td>
+                            <td>
+                                {% set amount = claim.claim_amount %}
+                                <span class="amount {% if amount > 50000 %}amount-high{% elif amount > 20000 %}amount-medium{% else %}amount-low{% endif %}">
+                                    ${{ "{:,.2f}".format(amount) }}
+                                </span>
+                            </td>
+                            <td>
+                                {% set fraud_score = claim.get('fraud_score') or (claim.get('ai_recommendation') or {}).get('fraud_score', 0) %}
+                                <div class="ai-score">
+                                    <span class="ai-indicator">🤖 AI</span>
+                                    <div class="score-bar">
+                                        <div class="score-fill" style="width: {{ (fraud_score * 100)|int }}%"></div>
+                                    </div>
+                                    <span class="score-value {% if fraud_score > 0.7 %}score-high{% elif fraud_score > 0.4 %}score-medium{% else %}score-low{% endif %}">
+                                        {{ "%.2f"|format(fraud_score) }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                {% set priority = claim.get('priority', 'normal') %}
+                                <span class="badge badge-{{ priority }}">{{ priority }}</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ claim.status.lower().replace(' ', '-') }}">{{ claim.status }}</span>
+                            </td>
+                            <td>
+                                <a href="/adjuster/claim/{{ claim.claim_id }}" class="btn btn-primary btn-sm">Review</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">✅</div>
+                    <h3>All caught up!</h3>
+                    <p>No claims in your queue at the moment.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function filterClaims(filter) {
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Filter logic would go here
+            // In production, this would trigger a new request or filter client-side
+            console.log('Filtering by:', filter);
+        }
+    </script>
+</body>
+</html>
