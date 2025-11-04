@@ -39,8 +39,9 @@ A **production-ready**, AI-powered insurance claims processing system demonstrat
 
 ```bash
 # Clone repository
-git clone <repo-url>
-cd agentic-on-eks
+git clone https://github.com/aws-samples/sample-agentic-insurance-claims-processing-eks.git 
+
+cd sample-agentic-insurance-claims-processing-eks
 
 # Deploy everything (infrastructure + apps + data)
 ./scripts/deploy.sh
