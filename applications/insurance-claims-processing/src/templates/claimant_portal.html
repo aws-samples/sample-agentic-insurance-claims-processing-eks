@@ -296,16 +296,19 @@
 <body>
     <div class="container">
         <div class="header">
-            <a href="/" style="color: white; text-decoration: none; opacity: 0.9; display: block; margin-bottom: 10px; font-size: 0.9em;">← Home</a>
-            <h1>🏥 Claimant Portal</h1>
-            <p>File and Track Your Insurance Claims</p>
+            <a href="/" style="color: #667eea; text-decoration: none; display: inline-block; margin-bottom: 15px; font-size: 0.95em; font-weight: 600; transition: color 0.3s;" onmouseover="this.style.color='#764ba2'" onmouseout="this.style.color='#667eea'">← Back to Home</a>
+            <h1>👤 Claimant Portal</h1>
+            <p>Submit Your Insurance Claim</p>
         </div>
 
         {% if policy %}
         <div class="welcome-box">
             <h2>Welcome, {{ policy.get('first_name', 'Valued Customer') }}!</h2>
+            <div class="alert alert-success">
+                ✅ <strong>Policy Verified</strong> - Your policy is active and eligible for claims
+            </div>
             <div class="policy-info">
-                <strong>Active Policy Information</strong>
+                <strong>Your Policy Information</strong>
                 <div class="policy-info-grid">
                     <div class="info-item">
                         <span class="info-label">Policy Number</span>
@@ -317,7 +320,7 @@
                     </div>
                     <div class="info-item">
                         <span class="info-label">Policy Status</span>
-                        <span class="info-value">{{ policy.get('policy_status', 'Active') }}</span>
+                        <span class="info-value">✅ {{ policy.get('policy_status', 'Active') }}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Effective Date</span>
@@ -327,29 +330,9 @@
             </div>
         </div>
 
-        <div class="card">
-            <h2>Quick Actions</h2>
-            <div class="quick-actions">
-                <a href="#file-claim" class="action-card" onclick="scrollToForm(); return false;">
-                    <div class="icon">📝</div>
-                    <h3>File New Claim</h3>
-                    <p>Submit a new insurance claim</p>
-                </a>
-                <a href="/claimant/claims/{{ policy_number }}" class="action-card">
-                    <div class="icon">📋</div>
-                    <h3>View My Claims</h3>
-                    <p>Track existing claims</p>
-                </a>
-                <a href="/claimant/policy/{{ policy_number }}" class="action-card">
-                    <div class="icon">📄</div>
-                    <h3>Policy Details</h3>
-                    <p>View policy information</p>
-                </a>
-            </div>
-        </div>
-
         <div class="card" id="file-claim">
-            <h2>File a New Claim</h2>
+            <h2>📝 File a New Claim</h2>
+            <p style="color: #666; margin-bottom: 20px;">Complete the form below to submit your insurance claim. Our AI-powered system will process it immediately.</p>
             <form action="/claimant/submit-claim" method="post">
                 <input type="hidden" name="policy_number" value="{{ policy_number }}">
 

@@ -141,7 +141,7 @@ async def portal_selector(request: Request):
                 <a href="/claimant" class="portal-card">
                     <div class="portal-icon">👤</div>
                     <h2>Claimant Portal</h2>
-                    <p>File a new claim or track existing claims on your policy</p>
+                    <p>Submit a new insurance claim on your policy</p>
                 </a>
 
                 <a href="/adjuster" class="portal-card">
@@ -348,11 +348,34 @@ async def claimant_view_claim(request: Request, claim_id: str, submitted: bool =
                 text-decoration: none;
                 border-radius: 8px;
                 margin-top: 20px;
+                margin-right: 10px;
+                transition: background 0.3s;
+            }}
+            .btn:hover {{
+                background: #764ba2;
+            }}
+            .btn-secondary {{
+                background: #6c757d;
+            }}
+            .btn-secondary:hover {{
+                background: #5a6268;
+            }}
+            .home-link {{
+                display: inline-block;
+                color: #667eea;
+                text-decoration: none;
+                font-weight: 600;
+                margin-bottom: 15px;
+                transition: color 0.3s;
+            }}
+            .home-link:hover {{
+                color: #764ba2;
             }}
         </style>
     </head>
     <body>
         <div class="card">
+            <a href="/" class="home-link">← Back to Home</a>
             {"<div class='success-banner'><h2>✅ Claim Submitted Successfully!</h2><p>Your claim has been received and is being processed by our AI-powered system.</p></div>" if submitted else ""}
 
             <h1>Claim {claim['claim_id']}</h1>
@@ -382,7 +405,10 @@ async def claimant_view_claim(request: Request, claim_id: str, submitted: bool =
                 <p class="info-value">{claim['description']}</p>
             </div>
 
-            <a href="/claimant?policy_number={claim['policy_number']}" class="btn">Back to Portal</a>
+            <div style="margin-top: 30px;">
+                <a href="/" class="btn btn-secondary">← Home</a>
+                <a href="/claimant?policy_number={claim['policy_number']}" class="btn">File Another Claim</a>
+            </div>
         </div>
     </body>
     </html>
