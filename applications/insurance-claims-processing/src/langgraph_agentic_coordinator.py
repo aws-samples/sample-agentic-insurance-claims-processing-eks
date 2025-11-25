@@ -155,7 +155,7 @@ class LangGraphClaimsCoordinator:
 
         # Initialize LLM for analysis assistance (lower temperature for consistency)
         import os
-        model_name = os.getenv("MODEL_NAME", "qwen2.5-coder:7b")
+        model_name = os.getenv("MODEL_NAME", "qwen3-coder")
         self.llm = ChatOllama(
             base_url=ollama_endpoint,
             model=model_name,

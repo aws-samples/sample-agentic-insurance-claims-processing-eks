@@ -297,7 +297,7 @@ class LangGraphInvestigationAgent:
         # Initialize LLM
         self.llm = ChatOllama(
             base_url=ollama_endpoint,
-            model="qwen2.5-coder:32b",
+            model="qwen3-coder",
             temperature=0.4  # Balanced temperature for investigation
         )
         

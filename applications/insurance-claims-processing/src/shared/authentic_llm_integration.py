@@ -40,7 +40,7 @@ class AutonomousLLMEngine:
     def __init__(self,
                  agent_id: str,
                  agent_type: str,
-                 preferred_model: str = "qwen2.5-coder:32b",
+                 preferred_model: str = "qwen3-coder",
                  fallback_model: str = "gpt-4",
                  ollama_endpoint: str = None):
 

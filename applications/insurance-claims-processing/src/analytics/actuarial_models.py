@@ -608,18 +608,42 @@ class ActuarialAnalyticsEngine:
         return risk_factors
 
     async def _perform_reserve_analysis(self, claim_data: Dict[str, Any]) -> LossReserveAnalysis:
-        """Perform loss reserve analysis"""
-        # This would typically use historical loss development data
-        # For now, provide a structured approach
+        """
+        Perform loss reserve analysis for a claim.
 
+        NOTE: This implementation uses simplified fixed percentages for demonstration purposes.
+        In a production environment, reserves should be calculated using:
+
+        1. Case Reserve: Adjuster's estimate based on claim investigation, not a fixed percentage.
+           Should reflect the expected cost to settle the specific claim.
+
+        2. IBNR (Incurred But Not Reported): Calculated at portfolio level using actuarial methods:
+           - Chain Ladder / Development Triangle method
+           - Bornhuetter-Ferguson method
+           - Expected Loss Ratio method
+           IBNR is NOT calculated per-claim; it's a bulk reserve for unreported claims.
+
+        3. ALAE (Allocated Loss Adjustment Expenses): Actual or estimated costs for:
+           - Legal fees, expert witnesses, independent adjusters
+           - Should be tracked per-claim or estimated using historical LAE-to-loss ratios
+
+        Industry Context:
+        - Total Reserves = Case Reserves + IBNR + ALAE + ULAE (Unallocated LAE)
+        - Reserve adequacy is typically reviewed quarterly by actuaries
+        - Regulatory requirements (e.g., SAP, GAAP) dictate reserve calculation standards
+
+        The fixed percentages below (80%, 20%, 15%) are SIMPLIFIED PLACEHOLDERS
+        and do not represent actuarially sound reserve estimates.
+        """
         claim_amount = float(claim_data.get('claim_amount', 0))
         accident_year = int(claim_data.get('accident_year', datetime.now().year))
         development_period = int(claim_data.get('development_period', 1))
 
-        # Simple reserve estimation
-        case_reserve = claim_amount * 0.8  # 80% of reported amount
-        ibnr_reserve = claim_amount * 0.2   # 20% IBNR
-        alae_reserve = claim_amount * 0.15  # 15% ALAE
+        # SIMPLIFIED reserve estimation for demonstration
+        # Production systems should use actuarial triangles and claim-specific analysis
+        case_reserve = claim_amount * 0.8   # Placeholder: 80% of reported amount
+        ibnr_reserve = claim_amount * 0.2   # Placeholder: 20% IBNR (should be portfolio-level)
+        alae_reserve = claim_amount * 0.15  # Placeholder: 15% ALAE (should be claim-specific or historical ratio)
 
         total_reserve = case_reserve + ibnr_reserve + alae_reserve
 

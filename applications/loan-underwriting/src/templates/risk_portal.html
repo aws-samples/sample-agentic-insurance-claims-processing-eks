@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Risk Manager Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="margin-bottom: 1.5rem;">📊 Risk Manager Portal</h2>
+    <p style="color: #666; margin-bottom: 2rem;">Monitor portfolio risk, analyze trends, and track underwriting quality metrics.</p>
+
+    <div style="margin-bottom: 1rem;">
+        <button class="btn btn-primary" onclick="loadMetrics()">Refresh</button>
+    </div>
+
+    <div id="metrics-container">
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading risk metrics...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    loadMetrics();
+});
+
+async function loadMetrics() {
+    const container = document.getElementById('metrics-container');
+    container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading risk metrics...</p></div>';
+
+    try {
+        const response = await fetch('/api/risk/metrics');
+        const data = await response.json();
+
+        displayMetrics(data);
+    } catch (error) {
+        container.innerHTML = `<div class="alert alert-error">Error loading metrics: ${error.message}</div>`;
+    }
+}
+
+function displayMetrics(data) {
+    const container = document.getElementById('metrics-container');
+
+    // Overall stats
+    const overallStats = `
+        <div class="grid grid-3" style="margin-bottom: 2rem;">
+            <div class="stat-card">
+                <h3>${data.total_applications || 0}</h3>
+                <p>Total Applications</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <h3>${data.approved_applications || 0}</h3>
+                <p>Approved</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                <h3>${data.approval_rate ? data.approval_rate.toFixed(1) : 0}%</h3>
+                <p>Approval Rate</p>
+            </div>
+        </div>
+    `;
+
+    // Risk distribution
+    let riskDistribution = '';
+    if (data.risk_distribution && data.risk_distribution.length > 0) {
+        const riskCards = data.risk_distribution.map(risk => {
+            let color = '';
+            switch(risk._id) {
+                case 'low':
+                    color = 'background: linear-gradient(135deg, #10b981 0%, #059669 100%);';
+                    break;
+                case 'medium':
+                    color = 'background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);';
+                    break;
+                case 'high':
+                    color = 'background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);';
+                    break;
+                case 'very_high':
+                    color = 'background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);';
+                    break;
+            }
+
+            return `
+                <div class="card" style="text-align: center; ${color} color: white;">
+                    <h4 style="text-transform: capitalize; opacity: 0.9;">${risk._id.replace('_', ' ')} Risk</h4>
+                    <h2 style="margin: 1rem 0;">${risk.count}</h2>
+                    <p style="opacity: 0.9;">Applications</p>
+                    <p style="margin-top: 0.5rem; opacity: 0.9;">
+                        Total: $${(risk.total_amount || 0).toLocaleString()}
+                    </p>
+                    ${risk.avg_probability_of_default ? `
+                        <p style="margin-top: 0.5rem; opacity: 0.9;">
+                            Avg Default Prob: ${risk.avg_probability_of_default.toFixed(1)}%
+                        </p>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+
+        riskDistribution = `
+            <div class="card">
+                <h3 style="margin-bottom: 1.5rem;">Risk Distribution</h3>
+                <div class="grid grid-4">
+                    ${riskCards}
+                </div>
+            </div>
+        `;
+    }
+
+    // Risk metrics table
+    const metricsTable = `
+        <div class="card" style="margin-top: 2rem;">
+            <h3 style="margin-bottom: 1.5rem;">Portfolio Risk Metrics</h3>
+            <div class="grid grid-2">
+                <div>
+                    <h4 style="color: #667eea; margin-bottom: 1rem;">Key Risk Indicators</h4>
+                    <table>
+                        <tr>
+                            <td><strong>Total Applications:</strong></td>
+                            <td>${data.total_applications || 0}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Approved Applications:</strong></td>
+                            <td>${data.approved_applications || 0}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Approval Rate:</strong></td>
+                            <td>${data.approval_rate ? data.approval_rate.toFixed(1) : 0}%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Portfolio Health:</strong></td>
+                            <td>${getPortfolioHealth(data)}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div>
+                    <h4 style="color: #667eea; margin-bottom: 1rem;">Risk Recommendations</h4>
+                    <div style="padding: 1rem; background: #f9fafb; border-radius: 6px;">
+                        ${getRiskRecommendations(data)}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = overallStats + riskDistribution + metricsTable;
+}
+
+function getPortfolioHealth(data) {
+    const approvalRate = data.approval_rate || 0;
+
+    if (approvalRate >= 60 && approvalRate <= 75) {
+        return '<span class="badge badge-success">Healthy</span>';
+    } else if (approvalRate >= 50 && approvalRate < 60) {
+        return '<span class="badge badge-warning">Cautious</span>';
+    } else if (approvalRate > 75) {
+        return '<span class="badge badge-warning">Aggressive</span>';
+    } else {
+        return '<span class="badge badge-danger">Conservative</span>';
+    }
+}
+
+function getRiskRecommendations(data) {
+    const approvalRate = data.approval_rate || 0;
+    let recommendations = [];
+
+    if (approvalRate > 75) {
+        recommendations.push('⚠️ Approval rate is high - consider tightening criteria');
+    } else if (approvalRate < 50) {
+        recommendations.push('💡 Approval rate is low - review denial reasons');
+    } else {
+        recommendations.push('✓ Approval rate is within healthy range (60-75%)');
+    }
+
+    if (data.risk_distribution) {
+        const highRisk = data.risk_distribution.find(r => r._id === 'high' || r._id === 'very_high');
+        if (highRisk && highRisk.count > 0) {
+            const percentage = (highRisk.count / data.total_applications * 100).toFixed(1);
+            if (percentage > 15) {
+                recommendations.push(`⚠️ High-risk applications: ${percentage}% - monitor closely`);
+            }
+        }
+    }
+
+    recommendations.push('📊 Regular portfolio review recommended');
+
+    return recommendations.map(r => `<p style="margin-bottom: 0.5rem;">${r}</p>`).join('');
+}
+</script>
+{% endblock %}

@@ -321,12 +321,20 @@ This is the **executive showcase** - comprehensive business intelligence!
 
 1. **Primary KPIs Dashboard** (Top section)
 
-   **Financial Performance**:
+   **Financial Performance** (Industry-Standard Metrics):
    ```
    Loss Ratio: 68.5%
-   ├─ Target: < 70% ✓
-   ├─ Approved Claims: $2.4M
-   └─ Total Premiums: $3.5M
+   ├─ Formula: (Incurred Losses + LAE) / Earned Premiums
+   ├─ Incurred Losses include: Paid Claims + Pending Claims + IBNR Reserve + ALAE
+   └─ Target: < 70% ✓
+
+   Expense Ratio: 27.0%
+   ├─ Operating Expenses / Earned Premiums
+   └─ Industry average: 25-30%
+
+   Combined Ratio: 95.5%
+   ├─ Loss Ratio + Expense Ratio
+   └─ < 100% indicates underwriting profit ✓
 
    Approval Rate: 73.2%
    Average Processing Time: 2.3 minutes
@@ -389,16 +397,33 @@ This is the **executive showcase** - comprehensive business intelligence!
 4. **Financial Performance Summary**
 
    ```
-   Total Premiums Collected:    $3,487,500
-   Approved Claims Payout:      $2,389,250
-   Net Underwriting Profit:     $1,098,250
+   Earned Premiums:             $3,487,500
+   Total Incurred Losses:       $2,680,000
+   ├─ Paid Claims:              $2,389,250
+   ├─ Pending Claims:           $150,000
+   ├─ IBNR Reserve (12%):       $286,710
+   └─ ALAE (12%):               $304,710
+   Operating Expenses (27%):    $941,625
+   ───────────────────────────────────────
+   Net Underwriting Profit:     $(134,125)
+
+   Key Ratios:
+   ├─ Loss Ratio:               76.8%
+   ├─ Expense Ratio:            27.0%
+   └─ Combined Ratio:           103.8%
+
    Active Policies:             500
    ```
+
+   **Note**: Underwriting Profit = Premiums - (Incurred Losses + Operating Expenses)
+   This is the correct industry formula per insurance accounting standards.
 
 #### Key Talking Points
 
 - **Business Intelligence**: 20+ KPIs for executive decision-making
-- **Loss Ratio**: Critical metric for insurance profitability (target: <70%)
+- **Loss Ratio**: (Incurred Losses + LAE) / Earned Premiums - target <70%
+- **Combined Ratio**: Loss Ratio + Expense Ratio - key profitability indicator (<100% = profitable)
+- **Underwriting Profit**: Premiums - Incurred Losses - Operating Expenses (correct formula)
 - **Fraud Detection**: 12.5% high-risk detection rate aligns with industry standard (10-15%)
 - **Processing Efficiency**: 2.3 min average processing time (vs. hours manually)
 - **AI Performance**: 94.7% accuracy with 87% confidence
@@ -413,11 +438,19 @@ comprehensive insights into operations and financial performance.
 
 Let me highlight the key metrics:
 
-FINANCIAL HEALTH:
-Our Loss Ratio is 68.5% - below the target of 70%, which means we're profitable.
-This metric is calculated as approved claims divided by premiums collected.
-With $3.5M in premiums and $2.4M in payouts, we're generating over $1M in
-underwriting profit.
+FINANCIAL HEALTH (Industry-Standard Formulas):
+We calculate Loss Ratio the industry-standard way: Incurred Losses plus Loss
+Adjustment Expenses, divided by Earned Premiums. Incurred losses include not
+just paid claims, but also pending claims, IBNR reserves, and allocated LAE.
+
+Our Combined Ratio - which is Loss Ratio plus Expense Ratio - tells us if we're
+making an underwriting profit. Below 100% means profitable; above 100% means
+we're paying out more than we're collecting.
+
+Underwriting Profit uses the correct insurance formula:
+Earned Premiums minus Incurred Losses minus Operating Expenses.
+This is different from simply subtracting claims from premiums - we include
+all operating costs like salaries, technology, and administrative expenses.
 
 FRAUD DETECTION:
 Our AI system is identifying 12.5% of claims as high risk - right in the sweet

@@ -152,7 +152,7 @@ class LangGraphFraudAgent:
             self.llm_engine = init_autonomous_llm(
                 agent_id=self.agent_id,
                 agent_type="fraud_detection_agent",
-                preferred_model="qwen2.5-coder:32b"
+                preferred_model="qwen3-coder"
             )
             logger.info("Initialized authentic autonomous LLM for fraud detection")
         except Exception as e:

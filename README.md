@@ -10,7 +10,23 @@
 
 ## 🎯 Overview
 
-A **production-ready**, AI-powered insurance claims processing system demonstrating advanced agentic AI patterns with LangGraph for intelligent, autonomous claims adjudication on AWS EKS.
+A **production-ready** collection of AI-powered financial services applications demonstrating advanced multi-agent AI patterns with LangGraph on AWS EKS. This repository showcases intelligent, autonomous decision-making systems for insurance and banking operations.
+
+## 📦 Applications
+
+### 1. **Insurance Claims Processing** 🏥
+AI-powered insurance claims adjudication with fraud detection
+- **Path**: `applications/insurance-claims-processing/`
+- **Features**: 4 persona portals, fraud detection, policy validation, risk assessment
+- **Model**: qwen3-coder
+
+### 2. **Intelligent Loan Underwriting** 🏦 NEW!
+Autonomous loan underwriting system with regulatory compliance
+- **Path**: `applications/loan-underwriting/`
+- **Features**: Credit analysis, income verification, risk assessment, compliance checks
+- **Processing Time**: 2-3 minutes per application
+- **Model**: qwen3-coder
+- **Quick Start**: See [applications/loan-underwriting/QUICKSTART.md](applications/loan-underwriting/QUICKSTART.md)
 
 ### ✨ Key Features
 
@@ -77,7 +93,7 @@ Access via ALB URL (displayed after deployment):
 
 | Portal | Endpoint | Purpose |
 |--------|----------|---------|
-| **Claimant** | `/claimant` | File claims, track status, upload documents |
+| **Claimant** | `/claimant` | Submit insurance claims with policy verification |
 | **Adjuster** | `/adjuster` | Review claims, AI risk assessment, approve/deny |
 | **SIU** | `/siu` | Investigate fraud, escalate cases, document findings |
 | **Supervisor** | `/supervisor` | Business KPIs, analytics, performance monitoring |
@@ -87,13 +103,15 @@ Access via ALB URL (displayed after deployment):
 The Supervisor Portal provides enterprise-grade analytics:
 
 ### Primary KPIs
-- **Loss Ratio**: Claims paid vs premiums collected (target: <70%)
+- **Loss Ratio**: (Incurred Losses + LAE) / Earned Premiums (target: <70%)
+- **Expense Ratio**: Operating Expenses / Earned Premiums (industry avg: 25-30%)
+- **Combined Ratio**: Loss Ratio + Expense Ratio (<100% = underwriting profit)
 - **Approval Rate**: % of processed claims approved
 - **Processing Time**: Average claim resolution time (current: 2.3 min)
 - **AI Accuracy**: Fraud detection model performance (94.7%)
 
 ### Analytics Sections
-1. **Financial Performance**: Premiums, payouts, net profit
+1. **Financial Performance**: Premiums, incurred losses, operating expenses, underwriting profit
 2. **Fraud Risk Analysis**: High/medium/low risk distribution
 3. **Claims Distribution**: By type, status, and geographic location
 4. **Operational Metrics**: Processing efficiency, throughput, uptime

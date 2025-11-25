@@ -436,8 +436,12 @@ claims_db
    │   ├─→ db.policies.aggregate([...]) # Premiums collected
    │   └─→ db.claims.find({fraud_score: {$gte: 0.6}}) # High risk claims
    ↓
-3. In-Memory Calculations
-   │   ├─→ Loss Ratio = (Approved Claims / Premiums) * 100
+3. In-Memory Calculations (Industry-Standard Formulas)
+   │   ├─→ Incurred Losses = Paid Claims + Pending Claims + IBNR Reserve + ALAE
+   │   ├─→ Loss Ratio = (Incurred Losses / Earned Premiums) * 100
+   │   ├─→ Expense Ratio = (Operating Expenses / Earned Premiums) * 100
+   │   ├─→ Combined Ratio = Loss Ratio + Expense Ratio (< 100% = profitable)
+   │   ├─→ Underwriting Profit = Premiums - Incurred Losses - Operating Expenses
    │   ├─→ Fraud Detection Rate = (High Risk / Total) * 100
    │   └─→ Approval Rate = (Approved / Processed) * 100
    ↓

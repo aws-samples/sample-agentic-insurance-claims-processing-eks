@@ -849,10 +849,46 @@ async def supervisor_portal(request: Request):
     fraud_detection_rate = (len(high_risk_claims) / total_claims * 100) if total_claims > 0 else 0
     avg_fraud_score = sum(c.get('fraud_score', 0) for c in all_claims if c) / total_claims if total_claims > 0 else 0
 
-    # === LOSS RATIO (Claims Paid / Premiums Collected) ===
+    # === INSURANCE FINANCIAL METRICS ===
+    # Industry-standard formulas for insurance profitability analysis
+
+    # Total Earned Premiums (using written premiums as proxy for demo)
     total_premiums = sum(p.get('policy_premium', 0) for p in all_policies)
-    approved_claim_amount = sum(c.get('claim_amount', 0) for c in all_claims if c and c.get('status') == 'approved')
-    loss_ratio = (approved_claim_amount / total_premiums * 100) if total_premiums > 0 else 0
+
+    # Paid Claims (approved and paid out)
+    paid_claims = sum(c.get('claim_amount', 0) for c in all_claims if c and c.get('status') == 'approved')
+
+    # Pending/Investigating Claims (estimated incurred but not yet paid)
+    pending_claims = sum(c.get('claim_amount', 0) for c in all_claims if c and c.get('status') in ['pending_review', 'submitted', 'investigating'])
+
+    # IBNR Reserve (Incurred But Not Reported) - industry standard ~10-15% of paid claims
+    ibnr_reserve = paid_claims * 0.12
+
+    # ALAE (Allocated Loss Adjustment Expenses) - industry standard ~10-15% of incurred losses
+    alae_expenses = (paid_claims + pending_claims) * 0.12
+
+    # Total Incurred Losses = Paid Claims + Pending Claims + IBNR + ALAE
+    total_incurred_losses = paid_claims + pending_claims + ibnr_reserve + alae_expenses
+
+    # Loss Ratio = (Incurred Losses + LAE) / Earned Premiums
+    # Industry standard: Loss Ratio should be < 70% for profitability
+    loss_ratio = (total_incurred_losses / total_premiums * 100) if total_premiums > 0 else 0
+
+    # Operating Expense Ratio (industry average ~25-30% for P&C insurance)
+    # Includes: salaries, rent, technology, marketing, administrative costs
+    expense_ratio = 27.0  # Conservative industry average
+    operating_expenses = total_premiums * (expense_ratio / 100)
+
+    # Combined Ratio = Loss Ratio + Expense Ratio
+    # Industry standard: Combined Ratio < 100% indicates underwriting profit
+    combined_ratio = loss_ratio + expense_ratio
+
+    # Underwriting Profit = Earned Premiums - Incurred Losses - Operating Expenses
+    # This is the correct formula per insurance accounting standards
+    underwriting_profit = total_premiums - total_incurred_losses - operating_expenses
+
+    # For backward compatibility, keep approved_claim_amount available
+    approved_claim_amount = paid_claims
 
     # === PROCESSING TIME METRICS ===
     claims_with_time = [c for c in all_claims if c and c.get('processing_time_minutes')]
@@ -1126,18 +1162,47 @@ async def supervisor_portal(request: Request):
         <!-- FINANCIAL METRICS -->
         <div class="section">
             <h2>Financial Performance</h2>
+            <p style="font-size: 0.9em; color: #64748b; margin-bottom: 20px;">
+                Underwriting Profit = Earned Premiums - (Incurred Losses + Loss Adjustment Expenses + Operating Expenses)
+            </p>
             <div class="breakdown-grid">
                 <div class="breakdown-item">
                     <strong>${total_premiums:,.0f}</strong>
-                    <span>Total Premiums Collected</span>
+                    <span>Earned Premiums</span>
                 </div>
                 <div class="breakdown-item">
-                    <strong>${approved_claim_amount:,.0f}</strong>
-                    <span>Approved Claims Payout</span>
+                    <strong>${total_incurred_losses:,.0f}</strong>
+                    <span>Total Incurred Losses</span>
+                    <div style="font-size: 0.75em; color: #94a3b8; margin-top: 4px;">
+                        Paid: ${paid_claims:,.0f} | Pending: ${pending_claims:,.0f} | IBNR: ${ibnr_reserve:,.0f} | LAE: ${alae_expenses:,.0f}
+                    </div>
                 </div>
                 <div class="breakdown-item">
-                    <strong>${total_premiums - approved_claim_amount:,.0f}</strong>
-                    <span>Net Underwriting Profit</span>
+                    <strong>${operating_expenses:,.0f}</strong>
+                    <span>Operating Expenses ({expense_ratio:.0f}%)</span>
+                </div>
+                <div class="breakdown-item" style="border-left-color: {"#059669" if underwriting_profit > 0 else "#dc2626"};">
+                    <strong style="color: {"#059669" if underwriting_profit > 0 else "#dc2626"};">${underwriting_profit:,.0f}</strong>
+                    <span>Net Underwriting {"Profit" if underwriting_profit > 0 else "Loss"}</span>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 25px; margin-bottom: 15px; font-size: 1.1em; color: #475569;">Key Ratios</h3>
+            <div class="breakdown-grid">
+                <div class="breakdown-item">
+                    <strong style="color: {"#059669" if loss_ratio < 70 else "#dc2626"};">{loss_ratio:.1f}%</strong>
+                    <span>Loss Ratio</span>
+                    <div style="font-size: 0.75em; color: #94a3b8; margin-top: 4px;">Target: &lt;70%</div>
+                </div>
+                <div class="breakdown-item">
+                    <strong>{expense_ratio:.1f}%</strong>
+                    <span>Expense Ratio</span>
+                    <div style="font-size: 0.75em; color: #94a3b8; margin-top: 4px;">Industry avg: 25-30%</div>
+                </div>
+                <div class="breakdown-item" style="border-left-color: {"#059669" if combined_ratio < 100 else "#dc2626"};">
+                    <strong style="color: {"#059669" if combined_ratio < 100 else "#dc2626"};">{combined_ratio:.1f}%</strong>
+                    <span>Combined Ratio</span>
+                    <div style="font-size: 0.75em; color: #94a3b8; margin-top: 4px;">&lt;100% = Profitable</div>
                 </div>
                 <div class="breakdown-item">
                     <strong>{len(all_policies)}</strong>
