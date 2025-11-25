@@ -10,25 +10,9 @@
 
 ## 🎯 Overview
 
-A **production-ready** collection of AI-powered financial services applications demonstrating advanced multi-agent AI patterns with LangGraph on AWS EKS. This repository showcases intelligent, autonomous decision-making systems for insurance and banking operations.
+A **production-ready** AI-powered insurance claims processing application demonstrating advanced multi-agent AI patterns with LangGraph on AWS EKS. This repository showcases intelligent, autonomous decision-making systems for insurance claims adjudication with fraud detection.
 
-## 📦 Applications
-
-### 1. **Insurance Claims Processing** 🏥
-AI-powered insurance claims adjudication with fraud detection
-- **Path**: `applications/insurance-claims-processing/`
-- **Features**: 4 persona portals, fraud detection, policy validation, risk assessment
-- **Model**: qwen3-coder
-
-### 2. **Intelligent Loan Underwriting** 🏦 NEW!
-Autonomous loan underwriting system with regulatory compliance
-- **Path**: `applications/loan-underwriting/`
-- **Features**: Credit analysis, income verification, risk assessment, compliance checks
-- **Processing Time**: 2-3 minutes per application
-- **Model**: qwen3-coder
-- **Quick Start**: See [applications/loan-underwriting/QUICKSTART.md](applications/loan-underwriting/QUICKSTART.md)
-
-### ✨ Key Features
+## ✨ Key Features
 
 - 🤖 **AI-Powered Automation**: Intelligent claim review with ML-driven fraud detection
 - 👥 **4 Persona Portals**: Claimant, Adjuster, SIU, and Supervisor interfaces
