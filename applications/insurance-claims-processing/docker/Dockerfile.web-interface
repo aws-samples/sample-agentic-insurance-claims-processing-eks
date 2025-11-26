@@ -41,8 +41,8 @@ COPY --chown=webapp:webapp src/data_loader.py ./src/
 # Copy templates directory with all persona-based HTML files
 COPY --chown=webapp:webapp src/templates/ ./src/templates/
 
-# Create static directory
-RUN mkdir -p /app/src/static && chown webapp:webapp /app/src/static
+# Copy static files (CSS, JS, Images)
+COPY --chown=webapp:webapp src/static/ ./src/static/
 
 # Set environment variables
 ENV PYTHONPATH=/app
